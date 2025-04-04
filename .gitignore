@@ -1,0 +1,13 @@
+#eclipse/emacs/vscode stuff
+.project
+.settings/
+.vscode/
+
+#OS
+.gdb_history
+.DS_Store
+
+# slurm files
+run.sh
+*.out
+*.err
