@@ -1,7 +1,5 @@
 '''
-   This file generates plots for density, energy, velocity, and temperature as the galactic disk as a function of a radial distance.
-    The snapshots here provide a visual representation of the central face of the disk of the galaxy. 
-
+    Generates face-on and edge-on voronoi meshes for a given range of snapshots. 
     Set up a sys argv for the run directory
 '''
 import h5py
@@ -91,7 +89,6 @@ for i, snap in enumerate(snaps):
     t = header["Time"]
 
     mvol = boxsize * boxsize * boxsize /len(masses)
-
 
     ''' Get the radius of the box'''
     rad_x = x_coord - 0.5*boxsize
@@ -314,6 +311,7 @@ for i in np.arange(31,  len(files), 2): # select the snapshot range to go throug
     xz_points = np.vstack((x_coord[edge_mask], z_coord[edge_mask])).T
 
     fig = plt.figure(figsize=(11,4))
+    fig.set_rasterized(True)
     ax1 = fig.add_subplot(1,2,1)
 
     rho_xy = density[face_mask]

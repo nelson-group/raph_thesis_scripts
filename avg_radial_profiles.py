@@ -1,6 +1,6 @@
 '''
-    Grabs every output folder in directory, grabs the last ten snapshots and profiles the average temperatures, velocity, and density
-    for each output folder, compares how they differ from our fidicual results and our deviation from the analytic solution.
+    Grabs every output folder in directory, grabs the last n_snaps_avg snapshots and takes the average temperature, velocity, and density
+    for each output folder. Can be used for loading parameters, injection radii, resolution, and gravity interactions
 '''
 
 import h5py
@@ -32,8 +32,14 @@ UnitDensity_in_cgs = UnitMass_in_g / pow(UnitLength_in_cm, 3) # 6.76989801444063
 UnitPressure_in_cgs = UnitMass_in_g / UnitLength_in_cm / pow(UnitTime_in_s, 2) # 6.769911178294542e-22 barye
 
 ### EQUATIONS ###
+# Analytic function - based off of equation 8 of Nguyen et. al, 2022
 # Solution inside the injection radius
-##### Taken from Chevalier and Clegg 85
+##### Taken from Nguyen et. al 2023
+# def sol_in(M, r):
+#     T1 = ((2 + M**2 * (gamma - 1) )/(gamma + 1))**(-(1 + gamma) / (2*(-5*gamma - 1)))
+#     T2 = ((1 + 3*gamma*M**2)/(1 + 3*gamma))**((-3*gamma - 1)/(5*gamma - 1))
+#     return M*T1*T2 - r/R
+
 def sol_in(M, r):
     T1 = ((3*gamma + 1/M**2)/(1+3*gamma))**(-(3*gamma+1)/(5*gamma+1))
     T2 = ((gamma - 1 + 2/M**2)/(1 + gamma))**((gamma+1)/(2*(5*gamma+1)))
@@ -53,7 +59,7 @@ def Temp_S(x_e, ie):
     return (gamma - 1) * ie/kb * (UnitEnergy_in_cgs/UnitMass_in_g)*mean_molecular_weight(x_e)
 
 ### INITIAL CONFIGURATION PARAMETERS ###
-n_bins = 200
+n_bins = 150
 
 ######### SIMULATION DATA #########
 data = {}
@@ -66,15 +72,16 @@ legends = []
 colors = []
 linestyles = []
 n_snaps = 100
-n_snaps_avg = 10
-outputs = sorted(glob.glob('./load_tests/output_*')) 
+n_snaps_avg = 4
+outputs = sorted(glob.glob('./load_tests/output_*'))
 print(outputs)
-cells_per_dim = [150 for output in outputs]
-print(cells_per_dim)
+cells_per_dim = [600 for output in outputs]
+# print(cells_per_dim)
 avg_vel = np.zeros(shape=(len(outputs), n_bins))
 avg_density = np.zeros(shape=(len(outputs), n_bins))
 avg_pressure = np.zeros(shape=(len(outputs), n_bins))
 avg_temps = np.zeros(shape=(len(outputs), n_bins))
+
 
 f_ratio_v = np.zeros(shape=(len(outputs), n_bins))
 f_ratio_rho = np.zeros(shape=(len(outputs), n_bins))
@@ -86,8 +93,13 @@ analytic_e_rho = np.zeros(shape=(len(outputs), n_bins))
 analytic_e_p = np.zeros(shape=(len(outputs), n_bins))
 analytic_e_t = np.zeros(shape=(len(outputs), n_bins))
 
+r_bins = np.linspace(0.0, 10, n_bins+1)
+r_faces = 0.5*(r_bins[:-1] + r_bins[1:])
+
 alpha_def = 0.25
 beta_def = 0.25
+x_max = 8
+
 for o, output in enumerate(outputs):
     print(output)
     files = glob.glob('/' + output + '/snap_*.hdf5')
@@ -101,6 +113,7 @@ for o, output in enumerate(outputs):
             # cells_per_dim = int(np.cbrt(len(f['PartType0']['Density'][()]))) 
             # also get cells in the injection region/(cell size(dx)/R) - relative spatial resolution. -> consider resolution.
         boxsize = parameters["BoxSize"] # boxsize in kpc
+        # print(boxsize)
         dx = boxsize/cells_per_dim[o]
         coord = np.transpose(data["Coordinates"])
         x_coord = data["Coordinates"][:,0] 
@@ -129,11 +142,11 @@ for o, output in enumerate(outputs):
         rad_y = y_coord - 0.5*boxsize
         rad_z = z_coord - 0.5*boxsize
         radius = np.sqrt(rad_x**2+rad_y**2+rad_z**2) 
-
+        radial_velocity = (vel_x*rad_x + vel_y*rad_y + vel_z*rad_z)/radius
         calc_temps = Temp_S(1, internal_energy)
 
         # VELOCITY DATA    
-        vel_stat, r_edge_v, bin_n = stats.binned_statistic(radius,  vel , bins = n_bins, range=[0, boxsize])
+        vel_stat, r_edge_v, bin_n = stats.binned_statistic(radius,  radial_velocity , bins = n_bins, range=[0, boxsize])
         avg_vel[o] += vel_stat
         # DENSITY DATA  
         density_stat, r_edge_d, bin_n = stats.binned_statistic(radius, density, bins = n_bins, range=[0, boxsize])
@@ -146,7 +159,8 @@ for o, output in enumerate(outputs):
         # TEMPERATURE DATA
         temp_stat, r_edge_t, bin_n = stats.binned_statistic(radius, calc_temps, bins = n_bins, range=[0, boxsize])
         avg_temps[o] += temp_stat
-
+        if o == outputs.index('./load_tests/output_default'):
+            print(np.median(calc_temps[(radius >= 0.98) & (radius <= 1)]))
 
     avg_vel[o] /= n_snaps_avg   
     avg_density[o] /= n_snaps_avg
@@ -197,10 +211,9 @@ for o, output in enumerate(outputs):
     ## T = pressure_an/(rho_n)* mean molecular weight
     temp_an = pressure_an/(rho_n)*(mean_molecular_weight(1)/PROTON_MASS_GRAMS) # keep the mean molecular mass the same. 
 
-    print("simulation temperature:")
-    print(avg_temps[o])
-    print("analytic temp")
-    print(temp_an)
+    # print("simulation temperature:")
+    # print("analytic temp")
+    # print(temp
 
     # DEVIATION 
     analytic_e_v[o] = (avg_vel[o] - v_an)/v_an * 100 
@@ -208,18 +221,18 @@ for o, output in enumerate(outputs):
     analytic_e_p[o] = (avg_pressure[o] - pressure_an)/pressure_an *100 
     analytic_e_t[o] = (avg_temps[o] - temp_an)/temp_an *100 
 
+    # print(analytic_e_v)
     relative_cell_size = dx/R 
     # legends.append(r"$\alpha$: %0.2f$, $\beta$: %0.2f$, R: %0.2f, cells: %i" % (E_load, M_load, R, cells_per_dim))
     legends.append(r"$\alpha$= %0.2f, $\beta$= %0.2f" % (E_load, M_load))
     # legends.append(r"$N_{cells}$: %i, size: %0.3f" % (cells_per_dim[o], relative_cell_size))
-    # legends.append(r"$r_{inject}$ = %0.2f, size: %0.3f" % (R, relative_cell_size))
-    
+    # legends.append(r"$R_{\rm inject}$ = %0.2f kpc" % (R))
 
     # if "high" in output:
-    #     linestyles.append("dotted")
+    #     linestyles.append("solid")
     #     colors.append("crimson")
     # if "low" in output:
-    #     linestyles.append("dashed")
+    #     linestyles.append("solid")
     #     colors.append("teal")
     # if "default" in output:
     #     linestyles.append("solid")
@@ -247,8 +260,6 @@ for o, output in enumerate(outputs):
         colors.append("black")
         linestyles.append("solid")
 
-
-    # Probably should find a better way of doing this.
     # if "SGNFW" in output:
     #     linestyles.append("dashdot")
     #     colors.append("crimson")
@@ -274,15 +285,17 @@ f_ratio_rho = avg_density/avg_density[outputs.index('./load_tests/output_default
 f_ratio_p = avg_pressure/avg_pressure[outputs.index('./load_tests/output_default')]
 f_ratio_t = avg_temps/avg_temps[outputs.index('./load_tests/output_default')]
 
-x_max = 10
-fig = plt.figure(figsize=(16, 8)) # default 16, 8. 21, 12 for load tests
+fig = plt.figure(figsize=(13, 7)) # default 16, 8. 21, 12 for load tests
 ax1 = fig.add_subplot(1,3,1)
 ax2 = fig.add_subplot(1,3,2)
 ax3 = fig.add_subplot(1,3,3)
+# ax4 = fig.add_subplot(2,2,4)
 
-ax1.set(xlim=(0, x_max), ylim=(0, 3e3))
-ax2.set(xlim=(0, x_max), ylim=(1e-5,10))
-ax3.set(xlim=(0, x_max), ylim=(1e4,1e8))
+ax1.set(xlim=(0, x_max), ylim=(0, 3000))
+ax2.set(xlim=(0, x_max), ylim=(1e-5,1))
+ax3.set(xlim=(0, x_max), ylim=(5e4,1e8))
+# ax4.set(xlim=(0, x_max), ylim=(1e1,1e8))
+
 
 ratio_fiducial_v = ax1.inset_axes([0, -0.35, 1, 0.30], sharex=ax1)
 analytic_error_v = ax1.inset_axes([0, -0.70, 1, 0.30], sharex=ax1)
@@ -300,67 +313,126 @@ analytic_error_t = ax3.inset_axes([0, -0.70, 1, 0.30], sharex=ax3)
 ax3.tick_params(axis='x', bottom=False, labelbottom=False)
 ratio_fiducial_t.tick_params(axis='x', bottom=False, labelbottom=False)
 
-analytic_error_v.set_xlabel("Distance[kpc]", fontsize=11)
-ax1.set_ylabel("Velocity[km/s]", fontsize=11)
-ratio_fiducial_v.set_ylabel("Ratio", fontsize=11)
-analytic_error_v.set_ylabel("Deviation[%]", fontsize=11)
+# ratio_fiducial_p = ax4.inset_axes([0, -0.35, 1, 0.30], sharex=ax4)
+# analytic_error_p = ax4.inset_axes([0, -0.70, 1, 0.30], sharex=ax4)
+# ax4.tick_params(axis='x', bottom=False, labelbottom=False)
+# ratio_fiducial_p.tick_params(axis='x', bottom=False, labelbottom=False)
 
-analytic_error_rho.set_xlabel("Distance[kpc]", fontsize=11)
-ax2.set_ylabel("N[$cm^{-3}$]", fontsize=11)
-ratio_fiducial_rho.set_ylabel("Ratio", fontsize=11)
-analytic_error_rho.set_ylabel("Deviation[%]", fontsize=11)
 
-analytic_error_t.set_xlabel("Distance[kpc]", fontsize=11)
-ax3.set_ylabel("Temperature[K]", fontsize=11)
-ratio_fiducial_t.set_ylabel("Ratio", fontsize=11)
-analytic_error_t.set_ylabel("Deviation[%]", fontsize=11)
+analytic_error_v.set_xlabel("Radius [kpc]", fontsize=13)
+ax1.set_ylabel(r"Radial Velocity [km/s]", fontsize=13)
+ratio_fiducial_v.set_ylabel("Ratio", fontsize=13)
+analytic_error_v.set_ylabel("Error [%]", fontsize=13)
+
+analytic_error_rho.set_xlabel(r"Radius [kpc]", fontsize=13)
+ax2.set_ylabel(r"Density [$\rm cm^{-3}$]", fontsize=13)
+ratio_fiducial_rho.set_ylabel("Ratio", fontsize=13)
+analytic_error_rho.set_ylabel("Error [%]", fontsize=13)
+
+analytic_error_t.set_xlabel("Radius [kpc]", fontsize=13)
+ax3.set_ylabel(r"Temperature [K]", fontsize=13)
+ratio_fiducial_t.set_ylabel("Ratio", fontsize=13)
+analytic_error_t.set_ylabel("Error [%]", fontsize=13)
+
+# analytic_error_p.set_xlabel("Radius [kpc]", fontsize=13)
+# ax4.set_ylabel(r"Pressure [$\rm K \, cm^{-3}$]", fontsize=13)
+# ratio_fiducial_p.set_ylabel("Ratio", fontsize=13)
+# analytic_error_p.set_ylabel("Deviation [%]", fontsize=13)
+
+ax1.plot(r_edge_v[:-1], avg_vel[2], label=legends[2], color=colors[2], linestyle=linestyles[2], zorder=10)     
+analytic_error_v.plot(r_edge_v[:-1], analytic_e_v[2], label=legends[2], color=colors[2], linestyle=linestyles[2], zorder=10)     
 
 for v, vel in enumerate(avg_vel):
-    # v_sim = ax1.plot(r_edge[:-1], avg_vel[v], label=outputs[v]) 
-    ax1.plot(r_edge_v[:-1], avg_vel[v], label=legends[v], color=colors[v], linestyle=linestyles[v])
-    analytic_error_v.plot(r_edge_v[:-1], analytic_e_v[v], label=legends[v], color=colors[v], linestyle=linestyles[v])
-    analytic_error_v.set_ylim(-15,15)
     if v != outputs.index('./load_tests/output_default'):
+        # v_sim = ax1.plot(r_edge[:-1], avg_vel[v], label=outputs[v]) 
+        ax1.plot(r_edge_v[:-1], avg_vel[v], label=legends[v], color=colors[v], linestyle=linestyles[v])
+        analytic_error_v.plot(r_edge_v[:-1], analytic_e_v[v], label=legends[v], color=colors[v], linestyle=linestyles[v])
         ratio_fiducial_v.plot(r_edge_v[:-1], f_ratio_v[v], label=legends[v], color=colors[v], linestyle=linestyles[v])
-        ratio_fiducial_v.set_ylim(0, 4.5)
+analytic_error_v.set_ylim(-5,15)
+ratio_fiducial_v.set_ylim(0, 3)
+ratio_fiducial_v.set_yticks([0, 1, 2])
+# analytic_error_v.set_yticks([-5, 0, 5, 10])
 
+ax2.semilogy(r_edge_d[:-1], avg_density[2], label=legends[2], color=colors[2], linestyle=linestyles[2], zorder=10)     
+analytic_error_rho.plot(r_edge_d[:-1], analytic_e_rho[2], label=legends[2], color=colors[2], linestyle=linestyles[2], zorder=10)     
 for d, rho in enumerate(avg_density):
-    # rho_sim = ax2.semilogy(r_edge[:-1], avg_density[d]*UnitDensity_in_cgs/PROTON_MASS_GRAMS, label=outputs[d])
-    ax2.semilogy(r_edge_d[:-1], avg_density[d], label=legends[d], color=colors[d], linestyle=linestyles[d])
-    analytic_error_rho.plot(r_edge_d[:-1], analytic_e_rho[d], label=legends[d], color=colors[d], linestyle=linestyles[d])
-    analytic_error_rho.set_ylim(-15,15)
     if d != outputs.index('./load_tests/output_default'):
+    # rho_sim = ax2.semilogy(r_edge[:-1], avg_density[d]*UnitDensity_in_cgs/PROTON_MASS_GRAMS, label=outputs[d])
+        ax2.semilogy(r_edge_d[:-1], avg_density[d], label=legends[d], color=colors[d], linestyle=linestyles[d])
+        analytic_error_rho.plot(r_edge_d[:-1], analytic_e_rho[d], label=legends[d], color=colors[d], linestyle=linestyles[d])
         ratio_fiducial_rho.plot(r_edge_d[:-1], f_ratio_rho[d], label=legends[d], color=colors[d], linestyle=linestyles[d])
-        ratio_fiducial_rho.set_ylim(0, 4.5)
+analytic_error_rho.set_ylim(-25,15)
+ratio_fiducial_rho.set_ylim(0, 3)
+ratio_fiducial_rho.set_yticks([0, 1, 2])
+# analytic_error_rho.set_yticks([-20 -10, 0, 10])
 
+
+ax3.semilogy(r_edge_t[:-1], avg_temps[2], label=legends[2], color=colors[2], linestyle=linestyles[2], zorder=10)     
+analytic_error_t.plot(r_edge_t[:-1], analytic_e_t[2], label=legends[2], color=colors[2], linestyle=linestyles[2], zorder=10)     
 for t, temps in enumerate(avg_temps):
-    # p_sim = ax3.semilogy(r_edge[:-1], (avg_pressure[p]*UnitPressure_in_cgs)/kb, label=outputs[p])
-    ax3.semilogy(r_edge_t[:-1], avg_temps[t], label=legends[t], color=colors[t], linestyle=linestyles[t])
-    analytic_error_t.plot(r_edge_t[:-1], analytic_e_t[t], label=legends[t], color=colors[t], linestyle=linestyles[t])
-    analytic_error_t.set_ylim(-15,15)
     if t != outputs.index('./load_tests/output_default'):
+        ax3.semilogy(r_edge_t[:-1], avg_temps[t], label=legends[t], color=colors[t], linestyle=linestyles[t])
+        analytic_error_t.plot(r_edge_t[:-1], analytic_e_t[t], label=legends[t], color=colors[t], linestyle=linestyles[t])
+        analytic_error_t.set_ylim(-20,10)
         ratio_fiducial_t.plot(r_edge_t[:-1], f_ratio_t[t], label=legends[t], color=colors[t], linestyle=linestyles[t])
-        ratio_fiducial_t.set_ylim(0, 4.5)
+        print(f_ratio_t[t])
+ratio_fiducial_t.set_ylim(0, 3)
+ratio_fiducial_t.set_yticks([0, 1, 2])
+# analytic_error_t.set_yticks([-20, 10, 0, 10]) # , 15])
 
-analytic_error_v.yaxis.set_label_coords(-0.095, 0.5)
-ratio_fiducial_v.yaxis.set_label_coords(-0.095, 0.5)
-ax1.yaxis.set_label_coords(-0.095, 0.5)
 
-analytic_error_rho.yaxis.set_label_coords(-0.1, 0.5)
-ratio_fiducial_rho.yaxis.set_label_coords(-0.1, 0.5)
-ax2.yaxis.set_label_coords(-0.1, 0.5)
+# for p, press in enumerate(avg_pressure):
+#     p_sim = ax4.semilogy(r_edge_p[:-1], press, label=legends[p], color=colors[p], linestyle=linestyles[p])
+#     # ax3.semilogy(r_edge_t[:-1], avg_temps[t], label=legends[t], color=colors[t], linestyle=linestyles[t])
+#     analytic_error_p.plot(r_edge_p[:-1], analytic_e_p[p], label=legends[p], color=colors[p], linestyle=linestyles[p])
+#     analytic_error_p.set_ylim(-15,15)
+#     if t != outputs.index('./load_tests/output_default'):
+#         ratio_fiducial_p.plot(r_edge_p[:-1], f_ratio_p[p], label=legends[p], color=colors[p], linestyle=linestyles[p])
+#         ratio_fiducial_p.set_ylim(0, 4.5)
 
-analytic_error_t.yaxis.set_label_coords(-0.095, 0.5)
-ratio_fiducial_t.yaxis.set_label_coords(-0.095, 0.5)
-ax3.yaxis.set_label_coords(-0.095, 0.5)
 
-# fig.supxlabel('Distance[kpc]', y=0.055, fontsize=11)
+analytic_error_v.yaxis.set_label_coords(-0.12, 0.5)
+ratio_fiducial_v.yaxis.set_label_coords(-0.12, 0.5)
+ax1.yaxis.set_label_coords(-0.12, 0.5)
 
-ax1.legend(loc='upper right')
-ax2.legend(loc='upper right')
-ax3.legend(loc='upper right')
+analytic_error_rho.yaxis.set_label_coords(-0.12, 0.5)
+ratio_fiducial_rho.yaxis.set_label_coords(-0.12, 0.5)
+ax2.yaxis.set_label_coords(-0.12, 0.5)
+
+analytic_error_t.yaxis.set_label_coords(-0.104, 0.5)
+ratio_fiducial_t.yaxis.set_label_coords(-0.104, 0.5)
+ax3.yaxis.set_label_coords(-0.104, 0.5)
+
+# analytic_error_p.yaxis.set_label_coords(-0.095, 0.5)
+# ratio_fiducial_p.yaxis.set_label_coords(-0.095, 0.5)
+# ax4.yaxis.set_label_coords(-0.095, 0.5)
+
+# fig.supxlabel('Distance[kpc]', y=0.055, fontsize=13)
+
+ax1.tick_params(axis='y', which='major', labelsize=11)
+ax2.tick_params(axis='y', which='major', labelsize=11)# , length=8, width=1.5)
+ax3.tick_params(axis='y', which='major', labelsize=11) # , length=8, width=1.5)
+
+analytic_error_v.tick_params(axis="both", which="major", labelsize=11)
+ratio_fiducial_v.tick_params(axis='y', which='major', labelsize=11)
+
+analytic_error_rho.tick_params(axis="both", which="major", labelsize=11)
+ratio_fiducial_rho.tick_params(axis='y', which='major', labelsize=11)
+
+analytic_error_t.tick_params(axis="both", which="major", labelsize=11)
+ratio_fiducial_t.tick_params(axis='y', which='major', labelsize=11)
+
+l1 = ax1.legend(loc='upper right', fontsize=12)
+l1.set_zorder(11)
+l2 = ax2.legend(loc='upper right', fontsize=12)
+l2.set_zorder(11)
+l3 = ax3.legend(loc='upper right', fontsize=12)
+l3.set_zorder(11)
+
+# ax4.legend(loc='upper right')
 
 plt.tight_layout()
+plt.subplots_adjust(wspace=0.18)
 
-plt.savefig("./moving_mesh_load_tests_plots.pdf",bbox_inches='tight')
+plt.savefig("./moving_mesh_load_tests_plots.pdf",bbox_inches='tight', dpi=150)
 plt.show()

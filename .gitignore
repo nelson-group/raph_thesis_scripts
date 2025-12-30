@@ -11,3 +11,8 @@
 run.sh
 *.out
 *.err
+
+# other files
+clean.sh
+*.hdf5
+*.csv

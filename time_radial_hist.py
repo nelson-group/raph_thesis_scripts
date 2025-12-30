@@ -1,12 +1,19 @@
 '''
-    This file generates plots for velocity, density, and temperature at 5, 15, 25, and 35 Myrs.
+    This file generates velocity, density, and temperature at 5, 15, 25, and 35 Myrs.
 '''
 
 import h5py
 import numpy as np    
+import os
+import sys
+import glob
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+from scipy import stats
+from scipy import spatial
+from scipy import integrate
 from scipy import interpolate
+from scipy import optimize
 import matplotlib as mpl
 from matplotlib.ticker import FuncFormatter
 import time
@@ -41,7 +48,7 @@ UnitPressure_in_cgs = UnitMass_in_g / UnitLength_in_cm / pow(UnitTime_in_s, 2) #
 UnitNumberDensity = UnitDensity_in_cgs/PROTON_MASS_GRAMS
 
 boxsize = parameters["BoxSize"] # boxsize in kpc
-n_bins = 500 # general number of bins for the histograms. Some value <= cells_per dim
+n_bins = 300 # general number of bins for the histograms. Some value <= cells_per dim
 R = parameters["injection_radius"] # injection radius in kpc
 
 deviation = 10
@@ -49,20 +56,27 @@ histb_l = boxsize/2 - deviation # boundary of histogram - lower bound
 histb_h = boxsize/2  + deviation # boundary of histogram - upper bound
 
 ### EQUATIONS ###
-def make_voronoi_slice(gas_xyz, gas_values, image_num_pixels, image_z_value, image_xy_minmax): 
-    interp = interpolate.NearestNDInterpolator(gas_xyz, gas_values)
-    s = image_xy_minmax/image_num_pixels
-    xs = np.arange(0, image_xy_minmax+s, s)
-    ys = np.arange(0, image_xy_minmax+s, s) 
+def make_voronoi_slice(gas_xyz, gas_values, image_num_pixels, image_z_value, image_xy_max): 
+    interp = interpolate.NearestNDInterpolator(gas_xyz, gas_values) # declare an interpolator of coordinates and values associated with the coordinates
+    # Set up a grid of x adn y values to interpolate over.
+    s = image_xy_max/image_num_pixels
+    xs = np.arange(np.min(gas_xyz), np.max(gas_xyz)+s, s) 
+    ys = np.arange(np.min(gas_xyz), np.max(gas_xyz)+s, s)  #
 
-    X,Y = np.meshgrid(xs,ys)
-    M_coords = np.transpose(np.vstack([X.ravel(), Y.ravel()]))
-    result = np.zeros((len(xs), len(ys)))
+    X,Y = np.meshgrid(xs,ys) # Make a mesh for the values 
+    M_coords = np.transpose(np.vstack([X.ravel(), Y.ravel(), np.full(len(X.ravel()), image_z_value)] ))  
 
-    for c in M_coords:
-        n_v = interp([c[0], c[1], image_z_value])
-        result[np.where(xs == c[0]), np.where(ys == c[1])] = n_v
-    return result, xs, ys
+    # vectorized interpolatation over every point in the mesh and then reshape the result into the desired grid shape. 
+    result = np.transpose(interp(M_coords).reshape(len(ys), len(xs)))
+
+    return result, np.array(xs), np.array(ys)
+
+
+    # coord = np.transpose(data["Coordinates"])
+    # x_coord = data["Coordinates"][:,0] 
+    # y_coord = data["Coordinates"][:,1]
+    # z_coord = data["Coordinates"][:,2]
+
 
 # Mean molecular weight based off of an electron abundance - currently x_e = 1, but subject to change in future simulations
 def mean_molecular_weight(x_e):
@@ -83,8 +97,6 @@ M_dot = M_dot_wind*grams_in_M_sun/s_in_yr # grams per second
 E_dot_wind = E_load*3e41*sfr # this is in ergs/second 
 E_dot = E_dot_wind
 
-fig = plt.figure(figsize=(22, 12))
-fig.set_rasterized(True)
 
 
 ######### SIMULATION DATA #########
@@ -93,16 +105,22 @@ v_rm = np.array([])
 M = []
 Temperatures = np.array([])
 
+
 # grab times t = 5,15,25,35 Myr
-times = np.array([5, 15, 25, 35])
+times = np.array([5, 15, 30])
 snaps = times*2 # very roughly, I am taking a snapshot every 0.5 Myrs and since I have 100 snapshots, the snapshot with the closest time will be t*2
 
 
-fig, axs = plt.subplots(3, 4, figsize=(20, 14))
+fig, axs = plt.subplots(3, 3, figsize=(15, 14))
 fig.set_rasterized(True)
 pc = [None]*12
 
 x = 0
+import time 
+start_time = time.time()
+def custom_tick_labels(x, pos):
+    return f"{x - boxsize/2:.0f}"
+
 for snap in snaps:
     filename = "./snap_%03d.hdf5" % snap
     with h5py.File(filename,'r') as f:
@@ -137,56 +155,75 @@ for snap in snaps:
     midpoint = boxsize/2
     lower_bound = midpoint - boxsize/(cells_per_dim)
     upper_bound = midpoint + boxsize/(cells_per_dim)
+    face_condition = (z_coord >=lower_bound) & (z_coord <= upper_bound)
+    n_densities = density[face_condition]
+    n_masses = masses[face_condition]
+    n_sie = internal_energy[face_condition]
+    n_ie = E[face_condition]
+    n_x = x_coord[face_condition]
+    n_y = y_coord[face_condition]
+    n_z = z_coord[face_condition]
+    n_vel_r = v_r[face_condition]
+    n_temps = temperatures[face_condition]
 
-    def custom_tick_labels(x, pos):
-        return f"{x - boxsize/2:.0f}"
+    
+    # 2D VELOCITY HISTOGRAM
 
     for nn, ax in enumerate(axs.flat):
         if nn == x:
+            # print(np.where((z_coord >=lower_bound) & (z_coord <= upper_bound)))
             cmap = plt.cm.magma
-            stat, x_edge, y_edge = make_voronoi_slice(coord, v_r, n_bins, midpoint, boxsize)
+            stat, x_edge, y_edge = make_voronoi_slice(coord[face_condition], v_r[face_condition], n_bins, midpoint, boxsize)
+            # stat, x_edge, y_edge, bin_n = stats.binned_statistic_2d(n_x, n_y, n_vel_r,  bins = 30, range=[[0,boxsize],[0,boxsize]])
             X, Y = np.meshgrid(x_edge,y_edge) 
             pc[nn] = ax.pcolormesh(X,Y, stat, vmin=0, vmax=1.5e3, cmap=cmap, shading='auto')
             ax.set(xlim=(histb_l, histb_h), ylim=(histb_l, histb_h)) 
-            ax.text(0.02, 0.93,'t =' + str(ts) + " Myr" , transform=ax.transAxes, color="white", fontname='serif')
+            ax.text(0.02, 0.93,'t =' + str(ts) + " Myr" , transform=ax.transAxes, color="white", fontname='serif', fontsize=16)
             ax.xaxis.set_major_formatter(FuncFormatter(custom_tick_labels))
-            if x != 0:
-                plt.setp(ax.get_xticklabels()[0], visible=False)    
-            plt.setp(ax.get_xticklabels()[-1], visible=False)    
-        if nn == x + 4: 
+            if x == 1 : plt.setp(ax.get_xticklabels()[0], visible=False)    
+            if x < 2: plt.setp(ax.get_xticklabels()[-1], visible=False)    
+            # test = interpolate.griddata( method='method')
+            # print(test)
+        if nn == x + 3: 
             cmap = plt.cm.viridis 
-            stat, x_edge, y_edge = make_voronoi_slice(coord, density, n_bins, midpoint, boxsize)
+            stat, x_edge, y_edge = make_voronoi_slice(coord[face_condition], density[face_condition], n_bins, midpoint, boxsize)
+            #stat, x_edge, y_edge, bin_n = stats.binned_statistic_2d(n_x, n_y, n_densities, bins = n_bins, range=[[0,boxsize],[0,boxsize]])
             X, Y = np.meshgrid(x_edge,y_edge)  
             pc[nn] = ax.pcolormesh(X,Y, stat.T*UnitNumberDensity, cmap=cmap, norm=colors.LogNorm(vmin=1e3*UnitNumberDensity, vmax=1e8*UnitNumberDensity), shading='auto')
             ax.set(xlim=(histb_l, histb_h), ylim=(histb_l, histb_h)) 
-            ax.text(0.02, 0.93,'t =' + str(ts) + " Myr" , transform=ax.transAxes, color="white", fontname='serif')
-            if x != 0:
-                plt.setp(ax.get_xticklabels()[0], visible=False)    
-            plt.setp(ax.get_xticklabels()[-1], visible=False)
+            ax.text(0.02, 0.93,'t =' + str(ts) + " Myr" , transform=ax.transAxes, color="white", fontname='serif', fontsize=16)
+            if x == 1: plt.setp(ax.get_xticklabels()[0], visible=False)    
+            if x < 2: plt.setp(ax.get_xticklabels()[-1], visible=False)
             ax.xaxis.set_major_formatter(FuncFormatter(custom_tick_labels))
-        if nn == x + 8:
+        if nn == x + 6:
             cmap = plt.cm.inferno
-            stat, x_edge, y_edge = make_voronoi_slice(coord, temperatures, n_bins, midpoint, boxsize)
+            stat, x_edge, y_edge = make_voronoi_slice(coord[face_condition], temperatures[face_condition], n_bins, midpoint, boxsize)
+            # stat, x_edge, y_edge, bin_n = stats.binned_statistic_2d(n_x, n_y, n_temps, bins = n_bins, range=[[0,boxsize],[0,boxsize]]) # replace with voronoi caculations - see overleaf
             X, Y = np.meshgrid(x_edge,y_edge)
             ax.set(xlim=(histb_l, histb_h), ylim=(histb_l, histb_h)) 
             pc[nn] = ax.pcolormesh(X,Y, stat.T, cmap=cmap, norm=colors.LogNorm(vmin=1e5, vmax=1e8), shading='auto')
-            ax.text(0.02, 0.93,'t =' + str(ts) + " Myr" , transform=ax.transAxes, color="white", fontname='serif')   
-            if x != 0:
-                plt.setp(ax.get_xticklabels()[0], visible=False)    
-            plt.setp(ax.get_xticklabels()[-1], visible=False)
+            ax.text(0.02, 0.93,'t =' + str(ts) + " Myr" , transform=ax.transAxes, color="white", fontname='serif', fontsize=16)
+            if x == 1: plt.setp(ax.get_xticklabels()[0], visible=False)    
+            if x < 2: plt.setp(ax.get_xticklabels()[-1], visible=False)
             ax.xaxis.set_major_formatter(FuncFormatter(custom_tick_labels))
 
-        if nn in [0,4,8]:
+        if nn in [0,3,6]:
             ax.yaxis.set_major_formatter(FuncFormatter(custom_tick_labels))
         else:
             ax.set_yticklabels([])
+        ax.tick_params(axis='both', which='major', labelsize=12)
+
     x += 1
 
 fig.subplots_adjust(wspace = 0)
 
-cbar1 = fig.colorbar(pc[0], ax=axs[0, :], label="Velocity [km/s]", pad=0.01)
-cbar2 = fig.colorbar(pc[4], ax=axs[1, :], label="Density [log($cm^{-3}$)]",  pad=0.01)
-cbar3 = fig.colorbar(pc[8], ax=axs[2, :], label="Temperature [log(K)]",  pad=0.01)
+cbar1 = fig.colorbar(pc[0], ax=axs[0, :], pad=0.01)
+cbar2 = fig.colorbar(pc[4], ax=axs[1, :], pad=0.01)
+cbar3 = fig.colorbar(pc[8], ax=axs[2, :], pad=0.01)
+cbar1.set_label("Velocity [km/s]",fontsize=16)
+cbar2.set_label(r"Density [log($\rm cm^{-3}$)]",fontsize=16)
+cbar3.set_label("Temperature [log(K)]",fontsize=16)
+
 
 labels = [1e3*UnitNumberDensity*(10**(x)) for x in range(1,5)]
 cbar2.set_ticks(labels)
@@ -196,8 +233,10 @@ labels = [1e5, 1e6, 1e7, 1e8]
 cbar3.set_ticks(labels)
 cbar3.set_ticklabels([int(np.log10(label)) for label in labels])
 
-fig.text(0.45, 0.08, 'X [kpc]', ha='center')
-fig.text(0.1, 0.5, 'Y [kpc]', va='center', rotation='vertical')
 
-plt.savefig("hist_evo_15Myr_voronoi_500.pdf", dpi=150, bbox_inches='tight') 
+fig.text(0.45, 0.07, 'X [kpc]', ha='center', fontsize=16)
+fig.text(0.09, 0.5, 'Y [kpc]', va='center', rotation='vertical', fontsize=16)
+
+plt.savefig("hist_evo_fid.pdf", dpi=150, bbox_inches='tight') 
+print("Program took seconds", time.time() - start_time, "to run")
 plt.show()

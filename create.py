@@ -35,15 +35,15 @@ print("thesis/cc85/create.py: creating ICs in directory" +  simulation_directory
 FilePath = simulation_directory + 'IC150kpc.hdf5'
 
 # Setting up the box, modify the values as needed
-boxsize = 300 # Units in kiloparsecs 
-cells_per_dimension = 300 # resolution of simulation simulation 
+boxsize = 30 # Units in kiloparsecs 
+cells_per_dimension = 450 # resolution of simulation simulation 
 number_of_cells = pow(cells_per_dimension, 3) 
 
 # Fill with background values
 density_0 = 1e-4 # hydrogem atoms/cm^3 
 velocity_radial_0 = 0 # initial radial velocity - in km/s
 # Figure out the CGS units of pressure. 
-pressure_0 = 3e44
+pressure_0 = 3e43
 pressure_cgs = pressure_0*BOLTZMANN_IN_ERG_PER_KELVIN 
 
 #### DON'T CHANGE THESE ####
@@ -98,7 +98,7 @@ print("temperature", Temp_S(1, energy_code_specific))
 
 
 """write *.hdf5 file; minimum number of fields required by Arepo """
-IC = h5py.File(simulation_directory + 'IC300kpc_300.hdf5', 'w')
+IC = h5py.File(simulation_directory + 'IC30kpc_450.hdf5', 'w')
 
 ## create hdf5 groups
 header = IC.create_group("Header")

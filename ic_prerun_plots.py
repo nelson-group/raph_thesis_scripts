@@ -1,5 +1,5 @@
 """
-    Prints out 3 plots for the mass: the projection in 1. XY and 2. XZ axis and the analytic vs simulation 
+    Debugging plots made to check if the initial conditions generated correctly. Plots slices and scatter plots of velocity, density, and temperature
 """
 import numpy as np
 import matplotlib.pyplot as plt

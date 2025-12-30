@@ -148,7 +148,7 @@ ax1.yaxis.set_label_coords(-0.131, 0.5)
 for i in range(0, len(avg_density)):
     ax2.semilogy(r_edge_d[:-1], avg_density[i], label="t = %i Myrs" % times[i], color = colors[i])
 ax2.set(xlim=(0, 15), ylim=(1e-4,100))
-ax2.set_ylabel("N [$cm^{-3}$]")
+ax2.set_ylabel("density [$cm^{-3}$]")
 ax2.set_xlabel("Distance [kpc]")
 ax2.minorticks_off()
 ax2.yaxis.set_label_coords(-0.12, 0.5)
