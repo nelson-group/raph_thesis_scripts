@@ -18,10 +18,12 @@ Contains the scripts and figures/videos used to generate plots for my thesis pro
 - **time_radial_hist.py**: Creates 2D edge-on slice plots velocity, density, and temperature 5, 15, 30 Myrs.
 - **voronoi_cooling_plots.py**: Generates edge-on slices and profiles for volumetric cooling rate, metallicity, and electron abundances. 
 - **Notebooks**:
-    - time_series_analysis.ipynb: Note used to look at anything that requires parsing through a large span in time.
+    - dynamics_comps.ipynb: Used for generating radial profiles, phase diagrams, and edge-on slices to each other. 
+    - time_series_analysis.ipynb: Used to look at anything that requires parsing through a large span in time
     - outflow_rate_comp.ipynb: Computes and compares the mass, energy, and momentum outflow rates between a set of simulations. 
     - voronoi_slices.ipynb: Used whenever a slice plot (and only a slice plot) is needed
-    - utilities.py: utility functions that are imported in.
+    - utilities.py: utility functions that are imported in.<br />
+
 The figures are found in the figures_videos folder, which is divided into subfolders, consisting of:
 - **disk_relaxation**: Contains the plots and videos of the M82 disk across the relaxation process.
 - **outflow_cooling**: Figures and videos that are related to radiatively cooled winds. 
