@@ -1,5 +1,5 @@
 # Feedback Driven Wind Simulations - Scripts
-Scripts used to compare and analyze a suite of galactic wind simulations built using a modified version of the AREPO moving mesh code (which can be found [here](https://github.com/nelson-group/raph_arepo)). The suite was built as part of a Master Thesis at the Heidelberg Institute of Theoretical Astrophysics under the supervision of Dr. Dylan Nelson. The AREPO version used to build the simulation suite can be found at this [link](https://github.com/nelson-group/raph_arepo/tree/master).
+Scripts used to compare and analyze a suite of galactic wind simulations built using a modified version of the AREPO moving mesh code (which can be found [here](https://github.com/nelson-group/raph_arepo)). The suite was built as part of a Master Thesis at the Heidelberg Institute of Theoretical Astrophysics under the supervision of Dr. Dylan Nelson.
 
 For this work we adopted the following fiducial parameters:
 
