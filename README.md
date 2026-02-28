@@ -1,34 +1,44 @@
-# Raph's thesis scripts
-Contains the scripts and figures/videos used to generate plots for my thesis project. the scripts include:
-- **avg_radial_plots.py**: Profiles the last 4 (though this can easily be increased or decreased as needed) slices of the temperatures, velocity, and density across different runs. 
-- **cooling_rate_comparisons.py**: Generates a side by side comparsion of the volumetric cooling rate between two different snapshots. 
-- **create.py**: Generates the IC file that consists of just the hot background.
-- **create_disk.py**: Generates the IC file that consists of a cool spinning galactic disk that is embedded in a hot background. Has options for the inclusion of a background grid
-- **disk_analytic_plots.py**
-- **histograms_mass_volume.py**: Debug plots to make sure that the refinements were that we made to show the distribution of mass and volume at the start and end the simulation
-- **ic_prerun_plots.py**: diagnostic plots of the initial conditions. Calculates and plots scatter, slices, and line plots for temperature, density, and velocity 
-- **initial_profile_plots.py**: Plots the profiles of velocity, density, and temperature along the central x-y plane and z axis. Used to verify initial conditions.
-- **mesh_evolution.py**: Generates the face-on and edge-on voronoi meshes of each snapshot in the simulation.
-- **mesh_comp.py**: Plots and compares the voronoi diagrams between two snapshots. Used to compare static vs moving comparisons, but can be generalized to other comparisons
-- **phase_diagram_T_nd.py**: Generates a phase diagram temperature as a function of number density, weighted by mass
-- **radial_slice_plots.py**: Generates slice plots for density, velocity, and temperature for either an edge or the face-on configuration, along with their respective profiles
-- **relax_profiles.py**: Profiles the rotation curves (ie. tangential/circular velocities), density, and temperature at t = 0.0 Gr, t = 1.0 Gyr, and t = 1.5 Gyr across the disk relaxation process.
-- **proj_c_T.py, proj_c_v.py, proj_column_density.py**: Used to conduct a case study of a cool cloud
-- **time_evolution_plots.py**: Takes every ten snapshots in the simulation and creates plots for velocity, density, and temperature.
-- **time_radial_hist.py**: Creates 2D edge-on slice plots velocity, density, and temperature 5, 15, 30 Myrs.
-- **voronoi_cooling_plots.py**: Generates edge-on slices and profiles for volumetric cooling rate, metallicity, and electron abundances. 
-- **Notebooks**:
-    - dynamics_comps.ipynb: Used for generating radial profiles, phase diagrams, and edge-on slices to each other. 
-    - time_series_analysis.ipynb: Used to look at anything that requires parsing through a large span in time
-    - outflow_rate_comp.ipynb: Computes and compares the mass, energy, and momentum outflow rates between a set of simulations. 
-    - voronoi_slices.ipynb: Used whenever a slice plot (and only a slice plot) is needed
-    - utilities.py: utility functions that are imported in.<br />
+# Feedback Driven Wind Simulations - Scripts
+Scripts used to compare and analyze a suite of galactic wind simulations built using a modified version of the AREPO moving mesh code (which can be found [here](https://github.com/nelson-group/raph_arepo)). The suite was built as part of a Master Thesis at the Heidelberg Institute of Theoretical Astrophysics under the supervision of Dr. Dylan Nelson. The AREPO version used to build the simulation suite can be found at this [link](https://github.com/nelson-group/raph_arepo/tree/master).
 
-The figures are found in the figures_videos folder, which is divided into subfolders, consisting of:
-- **disk_relaxation**: Contains the plots and videos of the M82 disk across the relaxation process.
-- **outflow_cooling**: Figures and videos that are related to radiatively cooled winds. 
-- **resolution_tests**: Resolution convergence tests for both the static and moving mesh cases.
-- **spherically_symmetric_winds**: the videos and plots generated for the configurations used. Note that NFW_75_radial_evo.mp4, NFW_75_radial_evo.mp4, SG_NFW_radial_evo.mp4
-- **winds_galactic_disks**: Figures and videos for adiabatic wind simulations that include a galactic disk.
+For this work we adopted the following fiducial parameters:
+**Note:** The fiducial parameters are a composite of the baseline parameters used across the thesis and do not correspond to any one simulation.
 
+| Parameter | Description | Fiducial Value | Range |
+|------------|--------------|----------------|--------|
+| $\alpha$ | Energy loading factor | 0.25 | 0.05–1.8 |
+| $\beta$ | Mass loading factor | 0.25 | 0.05–1.0 |
+| $\dot{M}_{\rm SFR}$ [$M_\odot \, \text{yr}^{-1}$] | Star Formation Rate | 10 | 10–20 |
+| $R_{\rm inject}$ [kpc] | Injection radius | 1.0 | 0.3–2.0 |
+| $t_{\rm burst}$ [Myr] | Starburst duration | 100 | 15–100 |
+| $t_{\rm rest}$ [Myr] | Time between bursts | 0 | 1–10 |
+| $M_{\rm 200}$ [$M_\odot$] | Virial mass | 5e10 | 6.5e9–2e12 |
+| $c_{\rm NFW}$ | Halo concentration | 10.0 | 6.94–15.0 |
+| $Z_{\rm disk}$ [$Z_\odot$] | Disk metallicity | 0.0 | 0.0–4.0 |
+| $Z_{\rm CGM}$ [$Z_\odot$] | CGM metallicity | 0.00 | 0–0.1 |
+| $\Delta x$ [pc] | Spatial resolution | 33 | 33–300 |
+| $N_{\rm cells}$ | Cells per dimension | 301 | 100–451 |
+| $\vec{F}_G$ | Gas self-gravity | Off | Off / On |
+| $\Lambda$ | Radiative cooling | Off | Off / CIE / PIE |
 
+The thesis can be accessed using this [link](./msc_thesis.pdf). The document style was adopted from the LaTeX template of [Nils Vu](https://github.com/nilsvu/msc-thesis)
+
+A compilation of some of the key results is shown below.
+
+****
+### Spherically Symmetric Winds
+![spherically_symmetric_winds](./figures_videos/fid_radial_evo.gif)
+The case of a spherically symmetric wind under continuous energy and mass deposition. Energy injection into the starburst creates a wind-blown bubble enveloped by a two-layer shock with an outer layer of shocked CGM gas and an inner layer of wind that is shocked upon contact with the CGM. The results here correspond well to the CC85 model. 
+
+### Winds on a Galactic Disk
+![winds_m82_disk](./figures_videos/M82_radial_evo.gif)
+Wind being driven from a starburst embedded within an M82 disk under continuous energy and mass deposition. The wind evolves as a bicone comprising an inner bicone of free wind that mostly follows CC85, albeit with slightly lower velocities due to gravitational effects from the disk and halo. The outer bicone forms a layer of hot, denser gas with slightly lower velocities. Interactions between the winds in the flowing in the disk plane shreds the disk and creates a dense turbulent shear layer of mixed temperatures
+
+### Effects of Radiative Cooling on Winds
+![winds_m82_disk_cooling_PIE](./figures_videos/PIE_fid_radial_evo.gif)
+Wind being driven from a starburst embedded within an M82 disk under continuous energy and mass deposition and radiatively cooled using a PIE-based cooling scheme. The wind develops a cooling radius beyond which radiative cooling dominants over adiabatic expansion. Additionally, clouds of cold gas are ejected from the center of the disk. 
+
+### Case Study of an Entrained Cold Cloud
+![cloud_m82_column_density](./figures_videos/proj_cd_PIE_M82.png)
+![cloud_m82_column_density](./figures_videos/cloud_P_PIE_M82.png)
+Analysis of a entrained cold cloud originating from a radiatively cooled wind. The cloud expands differentially and fades away as it is entrained rather than growing in mass as predicted under cloud-crushing studies in plane-parallel winds, e.g. [Gronke and Oh 2018](https://arxiv.org/abs/1806.02728). These results instead correspond with the results of [Dutta et al. 2025](https://arxiv.org/abs/2506.08545), where clouds remains locally isobaric with the wind, resulting in a steep decline in the density contrast and eventual dissolution downstread. 
