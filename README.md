@@ -33,14 +33,15 @@ Evolution of a spherically symmetric wind. Energy injection into the spherical s
 ![spherically_symmetric_winds](./figures_videos/fid_radial_evo.gif)
 
 ### Winds on a Galactic Disk
-![winds_m82_disk](./figures_videos/M82_radial_evo.gif)
-
 Wind driven outward from a spherical starburst embedded within an M82-based galactic disk. The wind evolves as a bicone consisting of an inner bicone of free wind that closely follows CC85, albeit with slightly lower velocities due to gravitational effects from the disk and halo. The outer bicone forms a layer of hot, denser gas with slightly lower velocities. Interactions between the winds and the disk create a dense turbulent shear layer of mixed temperatures and densities.
 
+![winds_m82_disk](./figures_videos/M82_radial_evo.gif)
+
 ### Effects of Radiative Cooling on Winds
+Radiatively cooled wind driven outward from a spherical starburst embedded within an M82-based galactic disk. The inclusion of radiative cooling suppresses turbulent effects between the disk and the wind. The wind develops a cooling radius beyond which radiative cooling dominants over adiabatic expansion. Additionally, clouds of cold gas are ejected from the center of the disk and accelerated outward, or entrained, by the wind.  
+
 ![winds_m82_disk_cooling_PIE](./figures_videos/PIE_fid_radial_evo.gif)
 
-Radiatively cooled wind driven outward from a spherical starburst embedded within an M82-based galactic disk. The inclusion of radiative cooling suppresses turbulent effects between the disk and the wind. The wind develops a cooling radius beyond which radiative cooling dominants over adiabatic expansion. Additionally, clouds of cold gas are ejected from the center of the disk and accelerated outward, or entrained, by the wind.  
 
 ###  Entrained Cold Cloud
 ![cloud_m82_column_density](./figures_videos/proj_cd_PIE_M82.png)
