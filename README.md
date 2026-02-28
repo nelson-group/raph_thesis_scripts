@@ -2,7 +2,10 @@
 Scripts used to compare and analyze a suite of galactic wind simulations built using a modified version of the AREPO moving mesh code (which can be found [here](https://github.com/nelson-group/raph_arepo)). The suite was built as part of a Master Thesis at the Heidelberg Institute of Theoretical Astrophysics under the supervision of Dr. Dylan Nelson. The AREPO version used to build the simulation suite can be found at this [link](https://github.com/nelson-group/raph_arepo/tree/master).
 
 For this work we adopted the following fiducial parameters:
-**Note:** The fiducial parameters are a composite of the baseline parameters used across the thesis and do not correspond to any one simulation.
+
+> [!NOTE]
+> The fiducial parameters are a composite of the baseline parameters used across the thesis and do not correspond to any one simulation.
+
 
 | Parameter | Description | Fiducial Value | Range |
 |------------|--------------|----------------|--------|
