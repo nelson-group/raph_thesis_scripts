@@ -31,17 +31,21 @@ A compilation of some of the key results is shown below.
 ****
 ### Spherically Symmetric Winds
 ![spherically_symmetric_winds](./figures_videos/fid_radial_evo.gif)
+
 The case of a spherically symmetric wind under continuous energy and mass deposition. Energy injection into the starburst creates a wind-blown bubble enveloped by a two-layer shock with an outer layer of shocked CGM gas and an inner layer of wind that is shocked upon contact with the CGM. The results here correspond well to the CC85 model. 
 
 ### Winds on a Galactic Disk
 ![winds_m82_disk](./figures_videos/M82_radial_evo.gif)
+
 Wind being driven from a starburst embedded within an M82 disk under continuous energy and mass deposition. The wind evolves as a bicone comprising an inner bicone of free wind that mostly follows CC85, albeit with slightly lower velocities due to gravitational effects from the disk and halo. The outer bicone forms a layer of hot, denser gas with slightly lower velocities. Interactions between the winds in the flowing in the disk plane shreds the disk and creates a dense turbulent shear layer of mixed temperatures
 
 ### Effects of Radiative Cooling on Winds
 ![winds_m82_disk_cooling_PIE](./figures_videos/PIE_fid_radial_evo.gif)
+
 Wind being driven from a starburst embedded within an M82 disk under continuous energy and mass deposition and radiatively cooled using a PIE-based cooling scheme. The wind develops a cooling radius beyond which radiative cooling dominants over adiabatic expansion. Additionally, clouds of cold gas are ejected from the center of the disk. 
 
 ### Case Study of an Entrained Cold Cloud
 ![cloud_m82_column_density](./figures_videos/proj_cd_PIE_M82.png)
 ![cloud_m82_column_density](./figures_videos/cloud_P_PIE_M82.png)
+
 Analysis of a entrained cold cloud originating from a radiatively cooled wind. The cloud expands differentially and fades away as it is entrained rather than growing in mass as predicted under cloud-crushing studies in plane-parallel winds, e.g. [Gronke and Oh 2018](https://arxiv.org/abs/1806.02728). These results instead correspond with the results of [Dutta et al. 2025](https://arxiv.org/abs/2506.08545), where clouds remains locally isobaric with the wind, resulting in a steep decline in the density contrast and eventual dissolution downstread. 
