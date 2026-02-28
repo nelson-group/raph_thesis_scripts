@@ -44,7 +44,7 @@ Radiatively cooled wind driven outward from a spherical starburst embedded withi
 
 
 ###  Entrained Cold Cloud
+Examination of an entrained cold cloud originating from a radiatively cooled wind. The cloud expands differentially and fades away as it is entrained rather than growing in mass as predicted under cloud-crushing studies in plane-parallel winds, e.g. [Gronke and Oh 2018](https://arxiv.org/abs/1806.02728). These results instead correspond with those of [Dutta et al. 2025](https://arxiv.org/abs/2506.08545), where clouds remains locally isobaric with the wind, resulting in a steep decline in the density contrast and eventual dissolution downstream. 
+
 ![cloud_m82_column_density](./figures_videos/proj_cd_PIE_M82.png)
 ![cloud_m82_P](./figures_videos/cloud_P_PIE_M82.png)
-
-Examination of an entrained cold cloud originating from a radiatively cooled wind. The cloud expands differentially and fades away as it is entrained rather than growing in mass as predicted under cloud-crushing studies in plane-parallel winds, e.g. [Gronke and Oh 2018](https://arxiv.org/abs/1806.02728). These results instead correspond with those of [Dutta et al. 2025](https://arxiv.org/abs/2506.08545), where clouds remains locally isobaric with the wind, resulting in a steep decline in the density contrast and eventual dissolution downstream. 
