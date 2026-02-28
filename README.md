@@ -11,14 +11,14 @@ For this work we adopted the following fiducial parameters:
 |------------|--------------|----------------|--------|
 | $\alpha$ | Energy loading factor | 0.25 | 0.05–1.8 |
 | $\beta$ | Mass loading factor | 0.25 | 0.05–1.0 |
-| $\dot{M}_{\rm SFR}$ [$M_\odot \, \text{yr}^{-1}$] | Star Formation Rate | 10 | 10–20 |
+| $\dot{M}_{\rm SFR}$ [M☉ yr⁻¹] | Star Formation Rate | 10 | 10–20 |
 | $R_{\rm inject}$ [kpc] | Injection radius | 1.0 | 0.3–2.0 |
 | $t_{\rm burst}$ [Myr] | Starburst duration | 100 | 15–100 |
 | $t_{\rm rest}$ [Myr] | Time between bursts | 0 | 1–10 |
-| $M_{\rm 200}$ [$M_\odot$] | Virial mass | 5e10 | 6.5e9–2e12 |
+| $M_{\rm 200}$ [M☉] | Virial mass | 5e10 | 6.5e9–2e12 |
 | $c_{\rm NFW}$ | Halo concentration | 10.0 | 6.94–15.0 |
-| $Z_{\rm disk}$ [$Z_\odot$] | Disk metallicity | 0.0 | 0.0–4.0 |
-| $Z_{\rm CGM}$ [$Z_\odot$] | CGM metallicity | 0.00 | 0–0.1 |
+| $Z_{\rm disk}$ [Z☉] | Disk metallicity | 0.0 | 0.0–4.0 |
+| $Z_{\rm CGM}$ [Z☉] | CGM metallicity | 0.00 | 0–0.1 |
 | $\Delta x$ [pc] | Spatial resolution | 33 | 33–300 |
 | $N_{\rm cells}$ | Cells per dimension | 301 | 100–451 |
 | $\vec{F}_G$ | Gas self-gravity | Off | Off / On |
